@@ -5,12 +5,13 @@ import os
 import ConfigParser
 import datetime
 
+
+# Python 2/3 compatible input
 if hasattr(__builtins__, 'raw_input'):
     input = raw_input
 
 def write_credential_file(args, creds):
     # Read in the existing config file
-
     # Kind of a hack, ConfigParser doesn't play nice with default sections
     ConfigParser.DEFAULTSECT = 'default'
     config = ConfigParser.SafeConfigParser()
@@ -47,8 +48,13 @@ def print_credentials(creds):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('-p', '--profile',dest='profile', required=True)
-    parser.add_argument('-m', '--mfa-arn',dest='mfa_arn', required=True)
+    parser.add_argument('-p', '--profile',dest='profile', required=True,
+                        help='Profile used to fetch temporary credentials')
+    parser.add_argument('-m', '--mfa-arn',dest='mfa_arn', required=True,
+                        help='ARN of the MFA device to use')
+    parser.add_argument('-d', '--duration', dest='duration', type=int,
+                        help='The duration, in seconds, that the credentials'
+                        ' should remain valid.', default=129600)
     subparsers = parser.add_subparsers(dest='cmd')
     write_cred_cmd = subparsers.add_parser(
         'write', help='Write temporary credentials to INI file'
@@ -72,6 +78,7 @@ if __name__ == '__main__':
     resp = client.get_session_token(
         SerialNumber=args.mfa_arn,
         TokenCode=str(code),
+        DurationSeconds=args.duration,
     )
     creds = resp['Credentials']
 
